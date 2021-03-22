@@ -82,8 +82,11 @@ point cameraPos( 100, 100, 0);
 point u(0, 0, 1), r(-1/sqrt(2), 1/sqrt(2), 0), l(-1/sqrt(2), -1/sqrt(2), 0);
 
 
-void drawAxes()
-{
+int totalBullet = 0;
+point bullet[100];
+double dof1, dof2, dof3, dof4;
+
+void drawAxes() {
 	if(drawaxes==1)
 	{
 		glColor3f(1.0, 1.0, 1.0);
@@ -101,8 +104,7 @@ void drawAxes()
 }
 
 
-void drawGrid()
-{
+void drawGrid() {
 	int i;
 	if(drawgrid==1)
 	{
@@ -125,8 +127,7 @@ void drawGrid()
 	}
 }
 
-void drawSquare(double a)
-{
+void drawSquare(double a) {
     //glColor3f(1.0,0.0,0.0);
 	glBegin(GL_QUADS);{
 		glVertex3f( a, a,2);
@@ -136,41 +137,18 @@ void drawSquare(double a)
 	}glEnd();
 }
 
-
-void drawCircle(double radius,int segments)
-{
-    int i;
-    struct point points[100];
-    glColor3f(0.7,0.7,0.7);
-    //generate points
-    for(i=0;i<=segments;i++)
-    {
-        points[i].x=radius*cos(((double)i/(double)segments)*2*pi);
-        points[i].y=radius*sin(((double)i/(double)segments)*2*pi);
-    }
-    //draw segments using generated points
-    for(i=0;i<segments;i++)
-    {
-        glBegin(GL_LINES);
-        {
-			glVertex3f(points[i].x,points[i].y,0);
-			glVertex3f(points[i+1].x,points[i+1].y,0);
-        }
-        glEnd();
-    }
-}
-
-
-void drawSphere(double radius,int slices,int stacks)
+void drawBarrelHead(double radius,int slices,int stacks)
 {
 	struct point points[100][100];
 	int i,j;
 	double h,r;
+	double alternateColor = 1;
 	//generate points
 	for(i=0;i<=stacks;i++)
 	{
 		h=radius*sin(((double)i/(double)stacks)*(pi/2));
 		r=radius*cos(((double)i/(double)stacks)*(pi/2));
+		r = 2 * radius - r;
 		for(j=0;j<=slices;j++)
 		{
 			points[i][j].x=r*cos(((double)j/(double)slices)*2*pi);
@@ -184,18 +162,85 @@ void drawSphere(double radius,int slices,int stacks)
         glColor3f((double)i/(double)stacks,(double)i/(double)stacks,(double)i/(double)stacks);
 		for(j=0;j<slices;j++)
 		{
+			// alternateColor colors
+			alternateColor = 1- alternateColor;
+			glColor3f(alternateColor, alternateColor, alternateColor);
 			glBegin(GL_QUADS);{
-			    //upper hemisphere
-				glVertex3f(points[i][j].x,points[i][j].y,points[i][j].z);
-				glVertex3f(points[i][j+1].x,points[i][j+1].y,points[i][j+1].z);
-				glVertex3f(points[i+1][j+1].x,points[i+1][j+1].y,points[i+1][j+1].z);
-				glVertex3f(points[i+1][j].x,points[i+1][j].y,points[i+1][j].z);
                 //lower hemisphere
                 glVertex3f(points[i][j].x,points[i][j].y,-points[i][j].z);
 				glVertex3f(points[i][j+1].x,points[i][j+1].y,-points[i][j+1].z);
 				glVertex3f(points[i+1][j+1].x,points[i+1][j+1].y,-points[i+1][j+1].z);
 				glVertex3f(points[i+1][j].x,points[i+1][j].y,-points[i+1][j].z);
 			}glEnd();
+		}
+	}
+}
+
+void drawCylinder(double radius,double height,int segments) {
+    int i;
+    double shade;
+	int alternateColor = 1;
+    struct point points[100];
+    //generate points
+    for(i=0;i<=segments;i++)
+    {
+        points[i].x=radius*cos(((double)i/(double)segments)*2*pi);
+        points[i].y=radius*sin(((double)i/(double)segments)*2*pi);
+    }
+    //draw triangles using generated points
+    for(i=0;i<segments;i++)
+    {
+        //create shading effect
+        if(i<segments/2)shade=2*(double)i/(double)segments;
+        else shade=2*(1.0-(double)i/(double)segments);
+        // alternateColor colors
+		if (alternateColor)
+ 	       glColor3f(0, 0, 0);
+		else 
+ 	       glColor3f(1, 1, 1);
+		alternateColor = 1 - alternateColor;
+
+		glBegin(GL_QUADS);{
+			glVertex3f(points[i].x, points[i].y, 0);
+			glVertex3f(points[i+1].x, points[i+1].y, 0);
+			glVertex3f(points[i].x, points[i].y, height);
+			glVertex3f(points[i+1].x, points[i+1].y, height);
+		}glEnd();
+    }
+}
+
+void drawHemiSphere(double radius, int slices, int stacks) {
+	struct point points[100][100];
+	int i,j;
+	double h,r;
+	int alternateColor = 1;
+	//generate points
+	for(i=0;i<=stacks;i++)
+	{
+		h=radius*sin(((double)i/(double)stacks)*(pi/2));
+		r=radius*cos(((double)i/(double)stacks)*(pi/2));
+		for(j=0;j<=slices;j++)
+		{
+			points[i][j].x=r*cos(((double)j/(double)slices)*2*pi);
+			points[i][j].y=r*sin(((double)j/(double)slices)*2*pi);
+			points[i][j].z=h;
+		}
+	}
+	//draw quads using generated points
+	for(i=0;i<stacks;i++) {
+
+		for(j=0;j<slices;j++) {
+        // alternateColor colors
+		alternateColor = 1 - alternateColor;
+        glColor3f(alternateColor, alternateColor, alternateColor);
+		
+		glBegin(GL_QUADS);{
+			glVertex3f(points[i][j].x,points[i][j].y,points[i][j].z);
+			glVertex3f(points[i][j+1].x,points[i][j+1].y,points[i][j+1].z);
+			glVertex3f(points[i+1][j+1].x,points[i+1][j+1].y,points[i+1][j+1].z);
+			glVertex3f(points[i+1][j].x,points[i+1][j].y,points[i+1][j].z);
+
+		}glEnd();
 		}
 	}
 }
@@ -240,6 +285,38 @@ void keyboardListener(unsigned char key, int x,int y){
 			// r = unitVector(r);
 			u = rotate(u, l, -rotationConst); // rotate u around r by -rotationConst degree
 			// l = unitVector(l);
+			break;
+		case 'q':
+			if (dof1 + rotationConst < 45)
+				dof1 += rotationConst;
+			break;
+		case 'w':
+			if (dof1 - rotationConst > -45)
+				dof1 -= rotationConst;
+			break;
+		case 'e':
+			if (dof2 + rotationConst < 45)
+				dof2 += rotationConst;
+			break;
+		case 'r':
+			if (dof2 - rotationConst > -45)
+				dof2 -= rotationConst;
+			break;
+		case 'a':
+			if (dof3 + rotationConst < 45)
+				dof3 += rotationConst;
+			break;
+		case 's':
+			if (dof3 - rotationConst > -45)
+				dof3 -= rotationConst;
+			break;
+		case 'd':
+			if (dof4 + rotationConst < 45)
+				dof4 += rotationConst;
+			break;
+		case 'f':
+			if (dof4 - rotationConst > -45)
+				dof4 -= rotationConst;
 			break;
 		default:
 			break;
@@ -288,6 +365,12 @@ void mouseListener(int button, int state, int x, int y){	//x, y is the x-y of th
 	switch(button){
 		case GLUT_LEFT_BUTTON:
 			if(state == GLUT_DOWN){		// 2 times?? in ONE click? -- solution is checking DOWN or UP
+				double  bound = atan2 (300, 600) * 180 / pi;
+				if ( fabs(dof1) < bound && fabs(dof2 + dof3) < bound ) {
+					bullet[totalBullet] = point(dof1, dof2, dof3);
+					// printf("%lf, %lf, %lf, %lf\n",gunAngle, gunSphereAngle, gunBarrelAngle, gunBarrelRotateAngle);
+					totalBullet++;
+				}
 			}
 			break;
 
@@ -309,6 +392,72 @@ void mouseListener(int button, int state, int x, int y){	//x, y is the x-y of th
 }
 
 
+void drawGun() {
+	glPushMatrix();
+    {
+		glRotatef(90,1,0,0);
+		// drawing the first semisphere
+		{
+			glColor3f(1,0,0);
+			glRotatef(dof1,0,1,0);
+			drawHemiSphere(30, 100, 20);
+		}
+		// drawing the second semisphere
+		{
+			glColor3f(1,0,0);
+			glRotatef(-180 + dof2,1,0,0);
+			drawHemiSphere(30, 100, 20);
+		}
+		// drawing the litol semisphere
+		{
+			glColor3f(1,0,0);
+			glTranslatef(0, 0, 30);
+			glRotatef(-180 ,0,1,0);
+			glRotatef(-dof3, 1, 0, 0);
+			glRotatef(dof4, 0, 0, 1);
+			glTranslatef(0, 0, -10);
+			drawHemiSphere(10, 100, 40);
+		}
+
+		// drawing the barrel
+		{
+			glRotatef(-180 ,0,1,0);
+			drawCylinder(10, 100, 80);
+		}
+
+		// drawing the flower
+		glPushMatrix();
+			glTranslatef(0, 0, 100);
+			glRotatef(-180 ,0,1,0);
+			drawBarrelHead(10, 100, 40);
+    	glPopMatrix();
+
+	}
+    glPopMatrix();
+	glPushMatrix();
+    {
+        glRotatef(90,1,0,0);
+        glTranslatef(0, 0, -600);
+        glColor3f(0.6, 0.6, 0.6);
+        drawSquare(300);
+    }
+    glPopMatrix();
+    glRotatef(90,1,0,0);
+	for (int idx = 0; idx < totalBullet; idx ++) {
+		glPushMatrix();
+		{
+			glColor3f(1,0,0);
+			glRotatef(bullet[idx].x,0,1,0);
+			glRotatef(-180 + bullet[idx].y,1,0,0);
+			glRotatef(-180 ,0,1,0);
+			glRotatef(-bullet[idx].z, 1, 0, 0);
+			// glRotatef(bullets[idx].dof4, 0, 0, 1);
+			glTranslatef(0, 0, -598);
+			drawSquare(4);
+		}
+		glPopMatrix();
+	}
+}
 
 void display(){
 
@@ -341,8 +490,7 @@ void display(){
 	drawAxes();
 	drawGrid();
 
-    glColor3f(1,0,0);
-    drawSquare(10);
+    drawGun();
 
 
     //drawCircle(30,24);
