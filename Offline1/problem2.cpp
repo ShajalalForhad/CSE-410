@@ -1,27 +1,15 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<math.h>
 
-#include <GL/glew.h>
+#include <windows.h>
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glext.h>
+#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
 #define pi (2*acos(0.0))
 #define EPS 1e-6
-
-double cameraHeight;
-double cameraAngle;
-int drawgrid;
-int drawaxes;
-double angle;
-double rotationConst = 2;
-double moveConst = 2;
-double squareLength = 120;
-double bigCircleRadius = 65;
-double smallCircleRadius = 10;
-bool pause;
-double speed = 1, increaseSpeed = 0.1;
 
 struct point {
 	double x,y;
@@ -72,7 +60,6 @@ double dot(point vect, point other) {
 	return vect.x * other.x + vect.y * other.y;
 }
 
-
 point rotate(point vect, double degree) {
 	point ans;
 	ans.x = cos(degree * (pi/180)) * vect.x - sin(degree * (pi/180))* vect.y;
@@ -94,63 +81,15 @@ point perpendicular(point vect) {
 	return point(vect.y, -vect.x);
 }
 
-
-#define bubbleCount 8
+// global variables
+#define bubbleCount 6
 bool inside[bubbleCount];
 point bubbles[bubbleCount], v[bubbleCount];
-
-void setSpeedOfCircles(double speed) {
-	for (int idx = 0; idx < bubbleCount; idx++) {
-		v[idx].x *= speed;
-		v[idx].y *= speed;
-	}
-}
-
-void drawAxes()
-{
-	if(drawaxes==1)
-	{
-		glColor3f(1.0, 1.0, 1.0);
-		glBegin(GL_LINES);{
-			glVertex3f( 100,0,0);
-			glVertex3f(-100,0,0);
-
-			glVertex3f(0,-100,0);
-			glVertex3f(0, 100,0);
-
-			glVertex3f(0,0, 100);
-			glVertex3f(0,0,-100);
-		}glEnd();
-	}
-}
+bool isPaused;
+double bubbleSpeed, increaseSpeed;
 
 
-void drawGrid()
-{
-	int i;
-	if(drawgrid==1)
-	{
-		glColor3f(0.6, 0.6, 0.6);	//grey
-		glBegin(GL_LINES);{
-			for(i=-8;i<=8;i++){
-
-				if(i==0)
-					continue;	//SKIP the MAIN axes
-
-				//lines parallel to Y-axis
-				glVertex3f(i*10, -90, 0);
-				glVertex3f(i*10,  90, 0);
-
-				//lines parallel to X-axis
-				glVertex3f(-90, i*10, 0);
-				glVertex3f( 90, i*10, 0);
-			}
-		}glEnd();
-	}
-}
-
-void drawSquare(double a)
-{
+void drawSquare(double a) {
 	glBegin(GL_LINES);
         glVertex2f(a,a);
         glVertex2f(a,-a);
@@ -195,47 +134,28 @@ void drawCircle(double radius,int segments)
     }
 }
 
-void drawSmallCircles(int num) {
-	for(int idx = 0; idx < num; idx++) {
-       	glPushMatrix();
-        {	
-			glColor3f(0.7, 0.7, 0.7);
-           	glTranslatef(bubbles[idx].x, bubbles[idx].y, 0);
-           	drawCircle(smallCircleRadius, 30);
-        }
-       	glPopMatrix();
-    }
-}
 
 void keyboardListener(unsigned char key, int x,int y){
 	switch(key){
 
 		case 'p':
-			pause = !pause;
+			isPaused = !isPaused;
 			break;
 		default:
 			break;
 	}
 }
 
-void incrementSpeed(double &speed, double speedLimit) {
-	if (speed + increaseSpeed < speedLimit)
-		speed += increaseSpeed;
-}
-
-void decrementSpeed(double &speed, double speedLimit) {
-	if (speed - increaseSpeed > speedLimit)
-		speed -= increaseSpeed;
-}
-
 
 void specialKeyListener(int key, int x,int y){
 	switch(key){
 		case GLUT_KEY_UP:		// up arrow key
-			incrementSpeed(speed, 10);
+			if (bubbleSpeed + .1 < 3)
+				bubbleSpeed += .1;
 			break;
 		case GLUT_KEY_DOWN:		//down arrow key
-			decrementSpeed(speed, 0.001);
+			if (bubbleSpeed - .1 > .1)
+				bubbleSpeed -= .1;
 			break;
 
 		case GLUT_KEY_RIGHT:
@@ -301,9 +221,6 @@ void display(){
 	//1. where is the camera (viewer)?
 	//2. where is the camera looking?
 	//3. Which direction is the camera's UP direction?
-
-	// gluLookAt(100,100,100,	0,0,0,	0,0,1);
-	//gluLookAt(200*cos(cameraAngle), 200*sin(cameraAngle), cameraHeight,		0,0,0,		0,0,1);
 	gluLookAt(0,0,200,	0,0,0,	0,1,0);
 
 
@@ -316,109 +233,103 @@ void display(){
 	****************************/
 	//add objects
 
-	drawAxes();
-	drawGrid();
-
-    //glColor3f(1,0,0);
-    //drawSquare(10);
-
-	drawSmallCircles(bubbleCount);
 	glColor3f(0, 1, 0);
-    drawSquare(squareLength);
+    drawSquare(120);
 	glColor3f(1, 0, 0);
-    drawCircle(bigCircleRadius, 50);
-    //drawCircle(30,24);
-
-    //drawCone(20,50,24);
-
-	//drawSphere(30,24,20);
-
-
-
-
+	// red circle draw
+    drawCircle(60, 50);
+	// bubbles draw
+	for(int i = 0; i < bubbleCount; i++) {
+       	glPushMatrix();
+        {	
+			glColor3f(0.5, 0.5, 0.5);
+           	glTranslatef(bubbles[i].x, bubbles[i].y, 0);
+           	drawCircle(10, 30);
+        }
+       	glPopMatrix();
+    }
 	//ADD this line in the end --- if you use double buffer (i.e. GL_DOUBLE)
 	glutSwapBuffers();
 }
 
-void handleSideBarCollision(int idx) {
-	if( squareLength - fabs(bubbles[idx].x) < smallCircleRadius ) {
-        v[idx].x = -v[idx].x;
-    }
 
-    if( squareLength - fabs(bubbles[idx].y) < smallCircleRadius ) {
-        v[idx].y = -v[idx].y;
-    }
-}
-
-void handleInsideBigCircle(int idx) {
-	 if( value(bubbles[idx]) < bigCircleRadius - smallCircleRadius )
-        inside[idx] = true;
-}
-
-void handleSmallCircleCollision(int idx) {
-	
+void bubbleCollision(int i) {
 	for(int other = 0; other < bubbleCount; other++) {
-		if ( other == idx ) continue;
+		if ( other == i ) continue;
 		if (!inside[other]) continue;
-		point dist = bubbles[idx] - bubbles[other];
-		point after1 = bubbles[idx] + scale(v[idx], 10);
+		point dist = bubbles[i] - bubbles[other];
+		point after1 = bubbles[i] + scale(v[i], 10);
 		point after2 = bubbles[other] + scale(v[other], 10);
 		point distAfter = after1 - after2;
-		if( value(distAfter) > 2 * smallCircleRadius ) continue;
-        if( 2 * smallCircleRadius - value(dist) < 0.1 ) {
+		// deciding if two bubbles are going towards each other or getting out
+		if( value(distAfter) > 2 * 10 ) continue;
+
+        if( 2 * 10 - value(dist) < 0.1 ) {
 			// printf("bichite bichite dhakka!");
-            point r1r2 = bubbles[idx] - bubbles[other];
-            point r1r2Perp = perpendicular(r1r2);
-            point v1Hor = projection(v[idx], r1r2);
-            point v1Ver = projection(v[idx], r1r2Perp);
 
-			point r2r1 = bubbles[other] - bubbles[idx];
-            point r2r1Perp = perpendicular(r2r1);
-            point v2Hor = projection(v[other], r2r1);
-            point v2Ver = projection(v[other], r2r1Perp);
+			// calculating velocity using law of conservation of momentum
+            point c1c2 = bubbles[i] - bubbles[other];
+            point c1c2Perp = perpendicular(c1c2);
+            point v1Hor = projection(v[i], c1c2);
+            point v1Ver = projection(v[i], c1c2Perp);
 
-			// with conservasion of momentum
-            // v[idx] = v2Hor + v1Ver;
-            // v[other] = v1Hor + v2Ver;
+			point c2c1 = bubbles[other] - bubbles[i];
+            point c2c1Perp = perpendicular(c2c1);
+            point v2Hor = projection(v[other], c2c1);
+            point v2Ver = projection(v[other], c2c1Perp);
 
-			// without conservasion of momentum
-			point newV1 = v2Hor + v1Ver;
-			v[idx] = scale(unitVector(newV1), value(v[idx]));
-			point newV2 = v1Hor + v2Ver;
-			v[other] = scale(unitVector(newV2), value(v[other]));
+			// just taking the direction keeping the original value
+			// as original velocity stays
+			point v1 = v2Hor + v1Ver;
+			v[i] = scale(unitVector(v1), value(v[i]));
+			point v2 = v1Hor + v2Ver;
+			v[other] = scale(unitVector(v2), value(v[other]));
 
         }
     }
 }
 
-void handleSmallBigCircleCollition(int idx) {
-	if( fabs(bigCircleRadius - smallCircleRadius  - value(bubbles[idx]) ) < 0.1 ) {
-		if( dot(bubbles[idx], v[idx]) < 0 ) return;
-		point posVector = bubbles[idx];
-		point projOnPos = -projection(v[idx],  posVector);
-		point perpProjOnPos = projection(v[idx], perpendicular(posVector));
-		v[idx] = projOnPos + perpProjOnPos;
+void bubbleCircleCollision(int i) {
+	if( fabs(60 - 10  - value(bubbles[i]) ) < 0.1 ) {
+		if( dot(bubbles[i], v[i]) < 0 ) return;
+		point posVector = bubbles[i];
+		point projOnPos = projection(v[i],  posVector);
+		point perpProjOnPos = projection(v[i], perpendicular(posVector));
+		v[i] = -projOnPos + perpProjOnPos;
 	}
 }
 
 void animate(){
-	angle+=0.01;
 
-	for(int idx = 0; idx < bubbleCount; idx++) {
+	// every collision logic goes here in the loop
+	for(int i = 0; i < bubbleCount; i++) {
 
-        handleSmallBigCircleCollition(idx);
-        if(!inside[idx]) {
-            handleInsideBigCircle(idx);
-            handleSideBarCollision(idx);
+        bubbleCircleCollision(i);
+		// still not inside the circle
+        if(!inside[i]) {
+			// updating inside array
+            if( value(bubbles[i]) < 60 - 10 )
+        		inside[i] = true;
+
+			// handling  square collision
+            if( 120 - fabs(bubbles[i].y) < 10 ) {
+				v[i].y = -v[i].y;
+			}
+			if( 120 - fabs(bubbles[i].x) < 10 ) {
+				v[i].x = -v[i].x;
+			}
         }
 
         else {
-            handleSmallCircleCollision(idx);
-			handleSmallBigCircleCollition(idx);
+			// handling bubble bubble collision
+            bubbleCollision(i);
+
+			// handling bubble circle collision
+			bubbleCircleCollision(i);
         }
 
-        if(!pause) {
-            bubbles[idx] += scale(v[idx], speed);
+        if(!isPaused) {
+            bubbles[i] += scale(v[i], bubbleSpeed);
         }
 
     }
@@ -426,23 +337,22 @@ void animate(){
 	glutPostRedisplay();
 }
 
-void initSmallCircles() {
-	point init(0.02, 0.01);
-	for (int idx = 0; idx < bubbleCount; idx ++) {
-		bubbles[idx].x = bubbles[idx].y = -(squareLength - smallCircleRadius);
-		v[idx] = rotate(init, 20*idx);
-		inside[idx] = false;
-	}
-}
 
 void init(){
 	//codes for initialization
-	drawgrid = 0;
-	drawaxes = 0;
-	cameraHeight = 150.0;
-	cameraAngle = 1.0;
-	angle = 0;
-	pause = false;
+	isPaused = false;
+	bubbleSpeed = 1; 
+	increaseSpeed = 0.1;
+
+	for (int i = 0; i < bubbleCount; i ++) {
+		inside[i] = false;
+	}
+	// set initial bubble coordinates and velocities
+	point velocity(0.02, 0.02);
+	for (int i = 0; i < bubbleCount; i ++) {
+		bubbles[i].x = bubbles[i].y = -(120 - 10);
+		v[i] = rotate(velocity, 20*i);
+	}
 
 	//clear the screen
 	glClearColor(0,0,0,0);
@@ -462,7 +372,7 @@ void init(){
 	//aspect ratio that determines the field of view in the X direction (horizontally)
 	//near distance
 	//far distance
-	initSmallCircles();
+
 }
 
 int main(int argc, char **argv){

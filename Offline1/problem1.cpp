@@ -1,20 +1,18 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<math.h>
 
-#include <GL/glew.h>
+#include <windows.h>
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glext.h>
+#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
 #define pi (2*acos(0.0))
 #define EPS 1e-6
 
 int drawgrid;
 int drawaxes;
-double angle;
-double rotationConst = 2;
-double moveConst = 2;
 
 struct point {
 	double x,y,z;
@@ -63,7 +61,7 @@ point cross(point vect, point another) {
 }
 
 point rotate(point vect, point axis, double degree) {
-	return scale(vect, cos(degree * (pi/180))) + scale( cross(axis, vect), sin(degree* (pi/180))); // rotate r around u by rotationConst degree
+	return scale(vect, cos(degree * (pi/180))) + scale( cross(axis, vect), sin(degree* (pi/180)));
 }
 
 point unitVector(point vect) {
@@ -71,18 +69,11 @@ point unitVector(point vect) {
 	return point(vect.x/r, vect.y/r, vect.z/r);
 }
 
-// point unitVector(point p1, point p2) {
-// 	double x = fabs(p1.x - p2.x) < EPS ? 0.0 : (p1.x - p2.x)/(p1.x - p2.x);
-// 	double y = fabs(p1.y - p2.y) < EPS ? 0.0 : (p1.y - p2.y)/(p1.y - p2.y);
-// 	double z = fabs(p1.z - p2.z) < EPS ? 0.0 : (p1.z - p2.z)/(p1.z - p2.z);
-// 	return point(x, y, z);
-// }
 
-point cameraPos( 100, 100, 0);
-point u(0, 0, 1), r(-1/sqrt(2), 1/sqrt(2), 0), l(-1/sqrt(2), -1/sqrt(2), 0);
-
-
-int totalBullet = 0;
+// global variables
+point pos;
+point u, r, l;
+int totalBullet;
 point bullet[100];
 double dof1, dof2, dof3, dof4;
 
@@ -251,72 +242,72 @@ void keyboardListener(unsigned char key, int x,int y){
 	switch(key){
 
 		case '1':
-			r = rotate(r, u, rotationConst); // rotate r around u by rotationConst degree
+			r = rotate(r, u, 2.0); // rotate r around u 
 			// r = unitVector(r);
-			l = rotate(l, u, rotationConst); // rotate l around u by rotationConst degree
+			l = rotate(l, u, 2.0); // rotate l around u
 			// l = unitVector(l);
 			break;
 		case '2':
-			r = rotate(r, u, -rotationConst); // rotate r around u by -rotationConst degree
+			r = rotate(r, u, -2.0); // rotate r around u by
 			// r = unitVector(r);
-			l = rotate(l, u, -rotationConst); // rotate l around u by -rotationConst degree
+			l = rotate(l, u, -2.0); // rotate l around u by
 			// l = unitVector(l);
 			break;
 		case '3':
-			l = rotate(l, r, rotationConst); // rotate l around r by -rotationConst degree
+			l = rotate(l, r, 2.0); // rotate l around r by
 			// r = unitVector(r);
-			u = rotate(u, r, rotationConst); // rotate u around r by -rotationConst degree
+			u = rotate(u, r, 2.0); // rotate u around r by
 			// l = unitVector(l);
 			break;
 		case '4':
-			l = rotate(l, r, -rotationConst); // rotate l around r by -rotationConst degree
+			l = rotate(l, r, -2.0); // rotate l around r by
 			// r = unitVector(r);
-			u = rotate(u, r, -rotationConst); // rotate u around r by -rotationConst degree
+			u = rotate(u, r, -2.0); // rotate u around r by
 			// l = unitVector(l);
 			break;
 		case '5':
-			r = rotate(r, l, rotationConst); // rotate l around r by -rotationConst degree
+			r = rotate(r, l, 2.0); // rotate l around r by
 			// r = unitVector(r);
-			u = rotate(u, l, rotationConst); // rotate u around r by -rotationConst degree
+			u = rotate(u, l, 2.0); // rotate u around r by
 			// l = unitVector(l);
 			break;
 		case '6':
-			r = rotate(r, l, -rotationConst); // rotate l around r by -rotationConst degree
+			r = rotate(r, l, -2.0); // rotate l around r by
 			// r = unitVector(r);
-			u = rotate(u, l, -rotationConst); // rotate u around r by -rotationConst degree
+			u = rotate(u, l, -2.0); // rotate u around r by
 			// l = unitVector(l);
 			break;
 		case 'q':
-			if (dof1 + rotationConst < 45)
-				dof1 += rotationConst;
+			if (dof1 + 2.0 < 45)
+				dof1 += 2.0;
 			break;
 		case 'w':
-			if (dof1 - rotationConst > -45)
-				dof1 -= rotationConst;
+			if (dof1 - 2.0 > -45)
+				dof1 -= 2.0;
 			break;
 		case 'e':
-			if (dof2 + rotationConst < 45)
-				dof2 += rotationConst;
+			if (dof2 + 2.0 < 45)
+				dof2 += 2.0;
 			break;
 		case 'r':
-			if (dof2 - rotationConst > -45)
-				dof2 -= rotationConst;
+			if (dof2 - 2.0 > -45)
+				dof2 -= 2.0;
 			break;
 		case 'a':
-			if (dof3 + rotationConst < 45)
-				dof3 += rotationConst;
+			if (dof3 + 2.0 < 45)
+				dof3 += 2.0;
 			break;
 		case 's':
-			if (dof3 - rotationConst > -45)
-				dof3 -= rotationConst;
+			if (dof3 - 2.0 > -45)
+				dof3 -= 2.0;
 			break;
 		case 'd':
-			if (dof4 + rotationConst < 45)
-				dof4 += rotationConst;
+			if (dof4 + 2.0 < 45)
+				dof4 += 2.0;
 			break;
 		case 'f':
-			if (dof4 - rotationConst > -45)
-				dof4 -= rotationConst;
+			if (dof4 - 2.0 > -45)
+				dof4 -= 2.0;
 			break;
 		default:
 			break;
@@ -327,24 +318,24 @@ void keyboardListener(unsigned char key, int x,int y){
 void specialKeyListener(int key, int x,int y){
 	switch(key){
 		case GLUT_KEY_DOWN:		//down arrow key
-			cameraPos -= scale(l, moveConst);
+			pos -= scale(l, 2.0);
 			break;
 		case GLUT_KEY_UP:		// up arrow key
-			cameraPos += scale(l, moveConst);
+			pos += scale(l, 2.0);
 			break;
 
 		case GLUT_KEY_RIGHT:
-			cameraPos += scale(r, moveConst);
+			pos += scale(r, 2.0);
 			break;
 		case GLUT_KEY_LEFT:
-			cameraPos -= scale(r, moveConst);
+			pos -= scale(r, 2.0);
 			break;
 
 		case GLUT_KEY_PAGE_UP:
-			cameraPos += scale(u, moveConst);
+			pos += scale(u, 2.0);
 			break;
 		case GLUT_KEY_PAGE_DOWN:
-			cameraPos -= scale(u, moveConst);
+			pos -= scale(u, 2.0);
 			break;
 
 		case GLUT_KEY_INSERT:
@@ -368,22 +359,19 @@ void mouseListener(int button, int state, int x, int y){	//x, y is the x-y of th
 				double  bound = atan2 (300, 600) * 180 / pi;
 				if ( fabs(dof1) < bound && fabs(dof2 + dof3) < bound ) {
 					bullet[totalBullet] = point(dof1, dof2, dof3);
-					// printf("%lf, %lf, %lf, %lf\n",gunAngle, gunSphereAngle, gunBarrelAngle, gunBarrelRotateAngle);
 					totalBullet++;
 				}
 			}
 			break;
 
 		case GLUT_RIGHT_BUTTON:
-		    if(state == GLUT_DOWN){		// 2 times?? in ONE click? -- solution is checking DOWN or UP
+		    if(state == GLUT_DOWN){	
                 drawgrid = 1 - drawgrid;
 			}
 			break;
 
 		case GLUT_MIDDLE_BUTTON:
-			if(state == GLUT_DOWN){		// 2 times?? in ONE click? -- solution is checking DOWN or UP
-				drawaxes = 1 - drawaxes;
-			}
+			
 			break;
 
 		default:
@@ -396,36 +384,30 @@ void drawGun() {
 	glPushMatrix();
     {
 		glRotatef(90,1,0,0);
-		// drawing the first semisphere
 		{
 			glColor3f(1,0,0);
 			glRotatef(dof1,0,1,0);
-			drawHemiSphere(30, 100, 20);
+			drawHemiSphere(25, 100, 20);
 		}
-		// drawing the second semisphere
 		{
 			glColor3f(1,0,0);
 			glRotatef(-180 + dof2,1,0,0);
-			drawHemiSphere(30, 100, 20);
+			drawHemiSphere(25, 100, 20);
 		}
-		// drawing the litol semisphere
 		{
 			glColor3f(1,0,0);
-			glTranslatef(0, 0, 30);
+			glTranslatef(0, 0, 25);
 			glRotatef(-180 ,0,1,0);
 			glRotatef(-dof3, 1, 0, 0);
 			glRotatef(dof4, 0, 0, 1);
 			glTranslatef(0, 0, -10);
 			drawHemiSphere(10, 100, 40);
 		}
-
-		// drawing the barrel
 		{
 			glRotatef(-180 ,0,1,0);
 			drawCylinder(10, 100, 80);
 		}
 
-		// drawing the flower
 		glPushMatrix();
 			glTranslatef(0, 0, 100);
 			glRotatef(-180 ,0,1,0);
@@ -475,7 +457,7 @@ void display(){
 	//initialize the matrix
 	glLoadIdentity();
 
-	gluLookAt(cameraPos.x, cameraPos.y, cameraPos.z,	cameraPos.x + l.x, cameraPos.y + l.y, cameraPos.z + l.z,	u.x, u.y, u.z);
+	gluLookAt(pos.x, pos.y, pos.z,	pos.x + l.x, pos.y + l.y, pos.z + l.z,	u.x, u.y, u.z);
 
 
 	//again select MODEL-VIEW
@@ -493,11 +475,11 @@ void display(){
     drawGun();
 
 
-    //drawCircle(30,24);
+    //drawCircle(25,24);
 
     //drawCone(20,50,24);
 
-	//drawSphere(30,24,20);
+	//drawSphere(25,24,20);
 
 
 
@@ -508,7 +490,6 @@ void display(){
 
 
 void animate(){
-	angle+=0.05;
 	//codes for any changes in Models, Camera
 	glutPostRedisplay();
 }
@@ -517,8 +498,15 @@ void init(){
 	//codes for initialization
 	drawgrid=1;
 	drawaxes=1;
-	angle=0;
-
+	pos = point(100, 100, 0);
+	u = point(0, 0, 1);
+	r = point(-1/sqrt(2), 1/sqrt(2), 0);
+	l =  point(-1/sqrt(2), -1/sqrt(2), 0);
+	totalBullet = 0;
+	dof1 = 0;
+	dof2 = 0;
+	dof3 = 0;
+	dof4 = 0;
 	//clear the screen
 	glClearColor(0,0,0,0);
 
